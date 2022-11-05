@@ -259,6 +259,4 @@ public class PayByCC {
 		this.creditCardLimit = creditCardLimit;
 	}
 
-	
-
 }
