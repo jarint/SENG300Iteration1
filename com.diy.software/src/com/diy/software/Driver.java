@@ -102,6 +102,7 @@ public class Driver
 		customer_GUI.getBarcodedProducts(barcodedProduct1,barcodedProduct2,barcodedProduct3);
 		customer_GUI.getCreditCard(creditCard);
 		customer_GUI.getPayByCCObject(customer1_creditCard);
+		customer_GUI.getBarcodes(barcode1, barcode2, barcode3);
 		customer_GUI.createGUI();
 		
 		
