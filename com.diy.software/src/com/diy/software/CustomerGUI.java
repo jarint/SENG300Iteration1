@@ -13,23 +13,18 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.swing.MutableComboBoxModel;
-import javax.swing.text.BadLocationException;
 
 import com.diy.hardware.BarcodedProduct;
 import com.diy.hardware.DoItYourselfStation;
 import com.diy.hardware.external.ProductDatabases;
 import com.diy.simulation.Customer;
-import com.jimmyselectronics.Item;
-import com.jimmyselectronics.necchi.Barcode;
 import com.jimmyselectronics.necchi.BarcodedItem;
-import com.jimmyselectronics.necchi.Numeral;
-import com.jimmyselectronics.opeechee.Card;
-import com.jimmyselectronics.opeechee.CardReader;
+import com.jimmyselectronics.opeechee.InvalidPINException;
+import com.jimmyselectronics.opeechee.BlockedCardException;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+
 
 public class CustomerGUI{
 
@@ -61,10 +56,10 @@ public class CustomerGUI{
 	JComboBox<Object> creditCardList;
 	BarcodedItem barcodedItem1;
 	Customer customer; //has a shopping cart
+	DoItYourselfStation diyStation;
 	PayByCC payByCC;
 	
 	ArrayList<BarcodedProduct> productList;
-	DoItYourselfStation diyStation;
 	
 	long totalCost;
 	double totalWeight;
@@ -73,11 +68,10 @@ public class CustomerGUI{
 	 * Constructor class
 	 * @author Benjamin Niles
 	 */
-	public CustomerGUI(Customer customer_given) throws IOException
+	public CustomerGUI(Customer customer_given, DoItYourselfStation station) throws IOException
 	{
 		customer = customer_given;
-		
-
+		diyStation = station;
 		totalCost = 0;
 		totalWeight = 0.0;
 		frameSetup();
@@ -158,10 +152,13 @@ public class CustomerGUI{
 		
 		productList = new ArrayList<BarcodedProduct>(customer.shoppingCart.size());
 		String[] shoppingList = new String[customer.shoppingCart.size()];
+		
+		//use Barcodes of items in shoppingCart to search for products in productDatabase
+		//then add their descriptions (names) to the shoppingList
 		for(int i =0; i<customer.shoppingCart.size();i++) {
 			productList.add(ProductDatabases.BARCODED_PRODUCT_DATABASE.get(((BarcodedItem)customer.shoppingCart.get(i)).getBarcode()));
 			shoppingList[i]= productList.get(i).getDescription();
-			System.out.println("added item to shoppingList: " + shoppingList[i]);
+			//System.out.println("added item to shoppingList: " + shoppingList[i]);
 			
 		}
 		
@@ -175,18 +172,19 @@ public class CustomerGUI{
 		String[] cardList = new String[customer.wallet.cards.size()];
 		for(int i =0; i<customer.wallet.cards.size(); i++) {
 			cardList[i]= customer.wallet.cards.get(i).kind;
-			System.out.println("added card to cardList: " + cardList[i]);
+			//System.out.println("added card to cardList: " + cardList[i]);
 			
 		}
 		
 		creditCardList = new JComboBox<Object>(cardList);
-		creditCardList.setSelectedIndex(0);
-		customer.selectCard((String)creditCardList.getSelectedItem());
+		creditCardList.setSelectedIndex(-1);
 		creditCardList.setEnabled(false);
+		
 		cardLabel = new JLabel("current card: ", JLabel.RIGHT);
 		payCCButton = new JButton("Pay by Credit Card");
 		cardLabel.setEnabled(false);
 		payCCButton.setEnabled(false);
+		
 		pinLabel = new JLabel("Enter PIN: ", JLabel.RIGHT);
 		pinInput = new JPasswordField(4);
 		pinLabel.setEnabled(false);
@@ -225,46 +223,34 @@ public class CustomerGUI{
 	
 		payCCButton.addActionListener(e->{
 			
-			//there is a card already in the slot when reached here
 			if(payByCC.postTransaction(totalCost, totalCost+5))
 			{
+				//System.out.println("Total cost = "+ totalCost);
 
-				System.out.println("Total cost = "+ totalCost);
-
-				//how to remove card from card reader??
-			//if the transaction is successfull, then remove the card from the card reader
-				///diyStation.cardReader.remove();
-
+				diyStation.cardReader.remove();
 				customer.replaceCardInWallet();
 				
 				pinInput.setText("");
-				
+				totalCost = 0;
+				totalWeight = 0.0;
 				totalLabel.setText("total: "+totalCost);
 				weightLabel.setText("weight: "+totalWeight);
 				billTextArea.setText("");
 				payCCButton.setEnabled(false);
 				pinInput.setEnabled(false);
 				pinLabel.setEnabled(false);
-				pinLabel.setText("Enter pin: ");
+				pinLabel.setText("Enter PIN: ");
 				creditCardList.setSelectedIndex(-1);
 				creditCardList.setEnabled(false);
 				cardLabel.setEnabled(false);
 				
-				System.out.println("Transaction approved");
-				System.out.println("remaining balance: "+payByCC.getCreditCardLimit());
-				totalCost = 0;
-				totalWeight = 0.0;
-				
-				//disable the pay by cc buttom
-				addItemScanButton.setEnabled(false);
-				billTextArea.append("TRANSACTION COMPLETED");
-				customer.freeUpStation();
-				
+				//System.out.println("Transaction approved");
 				
 			}
 			else
 			{
-				//have to remove card from card reader somehow
+				
+				diyStation.cardReader.remove();
 				customer.replaceCardInWallet();
 				payCCButton.setEnabled(false);
 				pinInput.setEnabled(false);
@@ -273,7 +259,7 @@ public class CustomerGUI{
 				creditCardList.setEnabled(true);
 				cardLabel.setEnabled(true);
 				
-				System.out.println("Transaction denied");
+				//System.out.println("Transaction denied");
 			}
 			
 			
@@ -284,25 +270,23 @@ public class CustomerGUI{
 		
 			//selected items are removed from the list and added to the text field in the right panel
 			//cost and weight information are also updated
-			
-			
 			customer.scanItem();
 			
 			String selectedItem = (String) shoppingCartList.getSelectedItem();
 			billTextArea.append(selectedItem+"\n");
 			
-			for(int i = 0; i< productList.size();i++) 
-			{
-				if(productList.get(i).getDescription().equals(selectedItem))
-				{
+			for(int i = 0; i< productList.size();i++) {
+				if(productList.get(i).getDescription().equals(selectedItem)) {
 					System.out.println("lookup found item "+productList.get(i).getDescription());
+					//System.out.println("price "+productList.get(i).getPrice());
+					//System.out.println("weight "+productList.get(i).getExpectedWeight());
 					totalCost+=productList.get(i).getPrice();
 					totalWeight+=productList.get(i).getExpectedWeight();
+					totalLabel.setText("total: "+totalCost);
+					weightLabel.setText("weight: "+totalWeight);
+					
 				}
-				
 			}
-			totalLabel.setText("total: "+totalCost);
-			weightLabel.setText("weight: "+totalWeight);
 			
 			shoppingCartList.removeItem(shoppingCartList.getSelectedItem());
 			
@@ -336,38 +320,42 @@ public class CustomerGUI{
 		
 		creditCardList.addItemListener(e->{
 			//cardLabel.setText("current item: "+creditCardList.getSelectedItem()+" at index "+creditCardList.getSelectedIndex());
-			//customer.replaceCardInWallet();
-			//customer.selectCard((String)creditCardList.getSelectedItem());
-			//System.out.println("selected card "+creditCardList.getSelectedItem());
-			if(pinInput.isEnabled()==false) { 
-				pinLabel.setEnabled(true);
-				pinInput.setEnabled(true);
+			
+			if(creditCardList.getSelectedIndex()!=-1) {
+				customer.selectCard((String)creditCardList.getSelectedItem());
+				System.out.println("selected card "+creditCardList.getSelectedItem());
+				if(pinInput.isEnabled()==false) { 
+					pinLabel.setEnabled(true);
+					pinInput.setEnabled(true);
+				}
+				pinLabel.setText("Enter PIN: ");
 			}
 		});
 		
 		pinInput.addActionListener(e->{
 			
-			String fakePIN = "1234";//placeholder
-			String fakePIN2 = String.valueOf(pinInput.getPassword());
-			//System.out.println(fakePIN);
-			//System.out.println(fakePIN2); //character array
-			//System.out.println(fakePIN.equals(fakePIN2));
-					
-			
+			String inputPIN = String.valueOf(pinInput.getPassword()).intern();
 			
 			try {
-				customer.insertCard((String)fakePIN);
-				//insert the credit card into station's card reader;
-				
+				customer.insertCard((String)inputPIN);
 				System.out.println("pin ok");
 				pinLabel.setText("pin ok");
 				payCCButton.setEnabled(true);
 				pinInput.setEnabled(false);
+				creditCardList.setEnabled(false);
 				
-			} catch (IOException e1) {
-				e1.printStackTrace();
+			} catch (InvalidPINException e1) {
+				//e1.printStackTrace();
 				pinLabel.setText("incorrect pin");
 				pinInput.setText("");
+				diyStation.cardReader.remove();
+			} catch (BlockedCardException e1) {
+				pinLabel.setText("card is blocked");
+				pinInput.setText("");
+				diyStation.cardReader.remove();
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
 			}		
 		});
 		
@@ -378,19 +366,4 @@ public class CustomerGUI{
 	{
 		this.payByCC = payBycc_given;		
 	}
-
-
-
-
-	
-	
-
-	
-	//public static void main(String[] args) {
-		
-	//	Customer customer = new Customer();
-	//	
-	//	CustomerGUI gui = new CustomerGUI(customer);
-	//}
-	
 }

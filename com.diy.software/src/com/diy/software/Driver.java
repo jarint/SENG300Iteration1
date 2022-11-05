@@ -11,7 +11,6 @@ import com.jimmyselectronics.necchi.Barcode;
 import com.jimmyselectronics.necchi.BarcodedItem;
 import com.jimmyselectronics.necchi.Numeral;
 import com.jimmyselectronics.opeechee.Card;
-import com.jimmyselectronics.opeechee.CardReader;
 
 
 /*
@@ -102,22 +101,28 @@ public class Driver
 		
 		customer1.wallet.cards.add(creditCard);
 		
+		creditCard = customer1_creditCard.initialiseCreditCard("asiV", "987654321", "draC tiderC s'1#remotsuC", "321", "4321", true, true);
+		customer1_creditCard.addCardIntoDatabase(customer1_maxCreditLimit);
+		
+		customer1.wallet.cards.add(creditCard);
 		
 		selfCheckout.plugIn();
 		selfCheckout.turnOn();
 		customer1.useStation(selfCheckout);
 		
-		
 		//integrate Drive with Customer GUI
 		//pass the customer
 		//pass the BarcodedProduct --> for descriptions
-		CustomerGUI customer_GUI = new CustomerGUI(customer1);
-		//customer_GUI.getBarcodedProducts(barcodedProduct1,barcodedProduct2,barcodedProduct3);
-		//customer_GUI.getCreditCard(creditCard);
-		customer_GUI.getPayByCCObject(customer1_creditCard);
-		//customer_GUI.getBarcodes(barcode1, barcode2, barcode3);
-		//customer_GUI.createGUI();
 		
+		//CustomerGUI customer_GUI = new CustomerGUI(customer1);
+		//customer_GUI.getPayByCCObject(customer1_creditCard);
+		
+		AttendantGUI attendantGUI = new AttendantGUI(customer1, selfCheckout);
+		attendantGUI.customerGUI.getPayByCCObject(customer1_creditCard);
+		
+	
+		
+	
 		
 	}
 }
