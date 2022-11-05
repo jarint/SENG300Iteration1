@@ -99,10 +99,7 @@ public class Driver
 		//customer1 --> Customer Object
 		//customer1_creditCard --> PayByCC.java Object
 		
-		
-		Card creditCard2 = new Card("Visa", "123456789", "Customer#1's Credit Card", "123", "1234", true, true);
-		
-		customer1.wallet.cards.add(creditCard2);
+		customer1.wallet.cards.add(creditCard);
 		
 		
 		selfCheckout.plugIn();
@@ -116,7 +113,7 @@ public class Driver
 		CustomerGUI customer_GUI = new CustomerGUI(customer1);
 		//customer_GUI.getBarcodedProducts(barcodedProduct1,barcodedProduct2,barcodedProduct3);
 		//customer_GUI.getCreditCard(creditCard);
-		//customer_GUI.getPayByCCObject(customer1_creditCard);
+		customer_GUI.getPayByCCObject(customer1_creditCard);
 		//customer_GUI.getBarcodes(barcode1, barcode2, barcode3);
 		//customer_GUI.createGUI();
 		

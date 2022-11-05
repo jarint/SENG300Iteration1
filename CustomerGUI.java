@@ -59,15 +59,12 @@ public class CustomerGUI{
 	JComboBox<Object> creditCardList;
 	BarcodedItem barcodedItem1;
 	Customer customer; //has a shopping cart
-	PayByCC payBycc;
+	PayByCC payByCC;
 	
 	ArrayList<BarcodedProduct> productList;
 	
-
-	int count;
-	long totalCost = 0;
-	double totalWeight = 0.0;
-	
+	long totalCost;
+	double totalWeight;
 	
 	/*
 	 * Constructor class
@@ -76,7 +73,8 @@ public class CustomerGUI{
 	public CustomerGUI(Customer customer_given) throws IOException
 	{
 		customer = customer_given;
-		count = 0;
+		totalCost = 0;
+		totalWeight = 0.0;
 		frameSetup();
 		buildLeftPanel();
 		buildRightPanel();
@@ -124,8 +122,8 @@ public class CustomerGUI{
 		
 		
 		infoPanel = new JPanel(new GridLayout());
-		totalLabel = new JLabel("total: "+count);
-		weightLabel = new JLabel("weight: "+count);
+		totalLabel = new JLabel("total: "+totalCost);
+		weightLabel = new JLabel("weight: "+totalWeight);
 		
 		infoPanel.add(totalLabel);
 		infoPanel.add(weightLabel);
@@ -164,7 +162,8 @@ public class CustomerGUI{
 		
 		shoppingCartList = new JComboBox<Object>(shoppingList);
 		shoppingCartList.setModel((MutableComboBoxModel<Object>)shoppingCartList.getModel());
-		shoppingCartList.setSelectedIndex(-1);
+		shoppingCartList.setSelectedIndex(0);
+		customer.selectNextItem();
 		itemLabel = new JLabel("Current item: ",JLabel.RIGHT);
 		addItemScanButton = new JButton("Scan Item");
 		
@@ -176,7 +175,8 @@ public class CustomerGUI{
 		}
 		
 		creditCardList = new JComboBox<Object>(cardList);
-		creditCardList.setSelectedIndex(-1);
+		creditCardList.setSelectedIndex(0);
+		customer.selectCard((String)creditCardList.getSelectedItem());
 		creditCardList.setEnabled(false);
 		cardLabel = new JLabel("current card: ", JLabel.RIGHT);
 		payCCButton = new JButton("Pay by Credit Card");
@@ -220,16 +220,16 @@ public class CustomerGUI{
 	
 		payCCButton.addActionListener(e->{
 			
-			//check for preconditions? In GUI or in PayByCC.java?
-			
-			//pay by Credit Card method call goes here!
-			//is card blocking/bank verification handled by payByCC?
-			
-			if(payBycc.postTransaction(totalCost, totalCost+5))
+			if(payByCC.postTransaction(totalCost, totalCost+5))
 			{
+				System.out.println("Total cost = "+ totalCost);
+
+				//how to remove card from card reader??
+				customer.replaceCardInWallet();
 				
 				pinInput.setText("");
-				count = 0;
+				totalCost = 0;
+				totalWeight = 0.0;
 				totalLabel.setText("total: "+totalCost);
 				weightLabel.setText("weight: "+totalWeight);
 				billTextArea.setText("");
@@ -238,15 +238,16 @@ public class CustomerGUI{
 				pinLabel.setEnabled(false);
 				pinLabel.setText("Enter pin: ");
 				creditCardList.setSelectedIndex(-1);
-				//need to call customer.replaceCardInWallet
 				creditCardList.setEnabled(false);
 				cardLabel.setEnabled(false);
 				
 				System.out.println("Transaction approved");
-				System.out.println("Total cost = "+ totalCost);
+				
 			}
 			else
 			{
+				//have to remove card from card reader somehow
+				customer.replaceCardInWallet();
 				payCCButton.setEnabled(false);
 				pinInput.setEnabled(false);
 				pinLabel.setEnabled(false);
@@ -266,6 +267,8 @@ public class CustomerGUI{
 			//selected items are removed from the list and added to the text field in the right panel
 			//cost and weight information are also updated
 			
+			customer.scanItem();
+			
 			String selectedItem = (String) shoppingCartList.getSelectedItem();
 			billTextArea.append(selectedItem+"\n");
 			
@@ -283,29 +286,34 @@ public class CustomerGUI{
 			//if no items, can't add any more, so disable comboBox and scan button
 			if(shoppingCartList.getItemCount()>0) {
 				shoppingCartList.setSelectedIndex(0);
-				//itemLabel.setText("current item: "+shoppingCartList.getSelectedItem()+" at index "+shoppingCartList.getSelectedIndex());
 			}else {
 				itemLabel.setText("No items in cart");
 				shoppingCartList.setEnabled(false);
 				addItemScanButton.setEnabled(false);
 			}
 			
-			//if(payCCButton.isEnabled()==false) payCCButton.setEnabled(true);
-			
 			if(creditCardList.isEnabled()==false) {
 				cardLabel.setEnabled(true);
 				creditCardList.setEnabled(true);
+				//payCCButton.setEnabled(true);
+				pinLabel.setEnabled(true);
+				pinInput.setEnabled(true);
 			}
 		});
 		
 		
 		shoppingCartList.addItemListener(e->{
 			//itemLabel.setText("current item: "+shoppingCartList.getSelectedItem()+" at index "+shoppingCartList.getSelectedIndex());
+			customer.deselectCurrentItem();
+			customer.selectNextItem();//customer only selects last item in list, but comboBox allows selection of any item in list- change this?
+		
 		});
+		
 		creditCardList.addItemListener(e->{
 			//cardLabel.setText("current item: "+creditCardList.getSelectedItem()+" at index "+creditCardList.getSelectedIndex());
+			customer.replaceCardInWallet();
+			customer.selectCard((String)creditCardList.getSelectedItem());
 			System.out.println("selected card "+creditCardList.getSelectedItem());
-			customer.selectCard("Visa");
 			if(pinInput.isEnabled()==false) { 
 				pinLabel.setEnabled(true);
 				pinInput.setEnabled(true);
@@ -316,29 +324,24 @@ public class CustomerGUI{
 			
 			String fakePIN = "1234";//placeholder
 			String fakePIN2 = String.valueOf(pinInput.getPassword());
-			System.out.println(fakePIN);
-			System.out.println(fakePIN2); //character array
-			System.out.println(fakePIN.equals(fakePIN2));
+			//System.out.println(fakePIN);
+			//System.out.println(fakePIN2); //character array
+			//System.out.println(fakePIN.equals(fakePIN2));
 					
 			
+			
 			try {
-				customer.insertCard(fakePIN);
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			
-			System.out.println("pin ok");
-			pinLabel.setText("pin ok");
-			payCCButton.setEnabled(true);
-			pinInput.setEnabled(false);
-			
-			
+				customer.insertCard((String)fakePIN);
+				System.out.println("pin ok");
+				pinLabel.setText("pin ok");
+				payCCButton.setEnabled(true);
+				pinInput.setEnabled(false);
 				
-		//	}else {
-		//		pinLabel.setText("incorrect pin");
-		//		pinInput.setText("");
-		//	}
+			} catch (IOException e1) {
+				e1.printStackTrace();
+				pinLabel.setText("incorrect pin");
+				pinInput.setText("");
+			}		
 		});
 		
 	}
@@ -346,7 +349,7 @@ public class CustomerGUI{
 
 	public void getPayByCCObject(PayByCC payBycc_given) 
 	{
-		this.payBycc = payBycc_given;		
+		this.payByCC = payBycc_given;		
 	}
 
 
