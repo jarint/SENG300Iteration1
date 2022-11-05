@@ -1,6 +1,9 @@
 package com.diy.software;
 
+import java.io.IOException;
+
 import com.diy.hardware.BarcodedProduct;
+import com.diy.hardware.DoItYourselfStation;
 import com.diy.hardware.external.ProductDatabases;
 import com.diy.simulation.Customer;
 import com.diy.simulation.Wallet;
@@ -8,6 +11,7 @@ import com.jimmyselectronics.necchi.Barcode;
 import com.jimmyselectronics.necchi.BarcodedItem;
 import com.jimmyselectronics.necchi.Numeral;
 import com.jimmyselectronics.opeechee.Card;
+import com.jimmyselectronics.opeechee.CardReader;
 
 
 /*
@@ -22,7 +26,7 @@ import com.jimmyselectronics.opeechee.Card;
 public class Driver 
 {
 
-	public static void main(String[] args) 
+	public static void main(String[] args) throws IOException 
 	{
 		Barcode barcode1, barcode2, barcode3;
 		BarcodedProduct barcodedProduct1, barcodedProduct2, barcodedProduct3;
@@ -37,9 +41,10 @@ public class Driver
 		long costOfItem3 = 300;
 		
 		Customer customer1 = new Customer();
-		Wallet customer1_wallet = new Wallet();
+		//Wallet customer1_wallet = new Wallet();
 		Card creditCard;		
 		PayByCC customer1_creditCard = new PayByCC();
+		DoItYourselfStation selfCheckout = new DoItYourselfStation();
 		
 		double customer1_maxCreditLimit = 5000;
 		
@@ -74,7 +79,7 @@ public class Driver
 		//add items into customer's shopping cart
 		customer1.shoppingCart.add(barcodedItem1);
 		customer1.shoppingCart.add(barcodedItem2);
-		//barcodedItem3 is not added into the shopping cart
+		customer1.shoppingCart.add(barcodedItem3);
 		
 		//create a credit card, with default and correct values
 		creditCard = customer1_creditCard.initialiseCreditCard("Visa", "123456789", "Customer#1's Credit Card", "123", "1234", true, true);
@@ -86,7 +91,7 @@ public class Driver
 		customer1_creditCard.addCardIntoDatabase(customer1_maxCreditLimit);
 		
 		//create the customer wallet;
-		customer1_wallet.cards.add(creditCard);			
+		//customer1_wallet.cards.add(creditCard);			
 		//Customer created
 		//Credit card set and running (not blocked)
 		
@@ -95,15 +100,23 @@ public class Driver
 		//customer1 --> Customer Object
 		//customer1_creditCard --> PayByCC.java Object
 		
+		customer1.wallet.cards.add(creditCard);
+		
+		
+		selfCheckout.plugIn();
+		selfCheckout.turnOn();
+		customer1.useStation(selfCheckout);
+		
+		
 		//integrate Drive with Customer GUI
 		//pass the customer
 		//pass the BarcodedProduct --> for descriptions
 		CustomerGUI customer_GUI = new CustomerGUI(customer1);
-		customer_GUI.getBarcodedProducts(barcodedProduct1,barcodedProduct2,barcodedProduct3);
-		customer_GUI.getCreditCard(creditCard);
+		//customer_GUI.getBarcodedProducts(barcodedProduct1,barcodedProduct2,barcodedProduct3);
+		//customer_GUI.getCreditCard(creditCard);
 		customer_GUI.getPayByCCObject(customer1_creditCard);
-		customer_GUI.getBarcodes(barcode1, barcode2, barcode3);
-		customer_GUI.createGUI();
+		//customer_GUI.getBarcodes(barcode1, barcode2, barcode3);
+		//customer_GUI.createGUI();
 		
 		
 	}
