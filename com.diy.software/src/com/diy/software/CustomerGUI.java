@@ -243,6 +243,9 @@ public class CustomerGUI{
 				creditCardList.setSelectedIndex(-1);
 				creditCardList.setEnabled(false);
 				cardLabel.setEnabled(false);
+				addItemScanButton.setEnabled(false);
+				shoppingCartList.setSelectedIndex(-1);
+				
 				
 				//System.out.println("Transaction approved");
 				
@@ -313,9 +316,15 @@ public class CustomerGUI{
 		
 		shoppingCartList.addItemListener(e->{
 			//itemLabel.setText("current item: "+shoppingCartList.getSelectedItem()+" at index "+shoppingCartList.getSelectedIndex());
+			
+			if(!addItemScanButton.isEnabled()&&shoppingCartList.getSelectedIndex()!=-1) {
+				addItemScanButton.setEnabled(true);
+			}
+			
 			customer.deselectCurrentItem();
 			customer.selectNextItem();//customer only selects last item in list, but comboBox allows selection of any item in list- change this?
 		
+			
 		});
 		
 		creditCardList.addItemListener(e->{
@@ -343,6 +352,7 @@ public class CustomerGUI{
 				payCCButton.setEnabled(true);
 				pinInput.setEnabled(false);
 				creditCardList.setEnabled(false);
+				addItemScanButton.setEnabled(false);
 				
 			} catch (InvalidPINException e1) {
 				//e1.printStackTrace();
