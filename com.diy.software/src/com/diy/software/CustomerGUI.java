@@ -59,6 +59,7 @@ public class CustomerGUI{
 	BarcodedProduct barcodedProduct1, barcodedProduct2, barcodedProduct3;//
 	Card credit_Card;
 	PayByCC payBycc;
+	Barcode barcode1, barcode2, barcode3;
 	
 
 	int count;
@@ -161,8 +162,9 @@ public class CustomerGUI{
 		//String[] shoppingList = {"item 1", "item 2", "item 3", "item 4"};
 		long[] itemCosts = {barcodedProduct1.getPrice(),barcodedProduct2.getPrice(),barcodedProduct3.getPrice()};
 		double[] itemWeights = {barcodedProduct1.getExpectedWeight(),barcodedProduct2.getExpectedWeight(),barcodedProduct3.getExpectedWeight()};
-		String[] shoppingList = {barcodedProduct1.getDescription(), barcodedProduct2.getDescription(), barcodedProduct3.getDescription()};
-		shoppingCartList = new JComboBox<Object>(shoppingList);
+		String[] shoppingList = {barcodedProduct1.getDescription()+" "+barcodedProduct1.getBarcode(), barcodedProduct2.getDescription()+" "+barcodedProduct2.getBarcode(), barcodedProduct3.getDescription()+" "+barcodedProduct3.getBarcode()};
+		Barcode[] shoppingListBarcodes = {barcode1, barcode2, barcode3};
+		shoppingCartList = new JComboBox<Object>(shoppingListBarcodes);
 		shoppingCartList.setModel((MutableComboBoxModel<Object>)shoppingCartList.getModel());
 		shoppingCartList.setSelectedIndex(-1);
 		itemLabel = new JLabel("Current item: ",JLabel.RIGHT);
@@ -300,12 +302,16 @@ public class CustomerGUI{
 			System.out.println(pinInput.getPassword()); //character array
 			System.out.println(pinInput.getPassword().length);
 			String passwordString = String.valueOf(pinInput.getPassword());
-		//	System.out.println("00000"+(String)passwordString+"00000");
-			//actual pin of Customer#1's Credit Card
+			System.out.println("pass"+ passwordString);
+			System.out.println("password entered: "+pinInput.getPassword().toString() );
+						
+			//actual pin of Customer#1's Credit Card ("1234")
 			try 
 			{
 				//credit_Card.insert((String)passwordString); //not working
-				credit_Card.insert(fakePIN);
+				//credit_Card.insert((String)passwordString);
+				System.out.println("input password "+ String.valueOf(pinInput.getPassword()));
+				//credit_Card.insert(String.valueOf(pinInput.getPassword()));
 				System.out.println("correct password, making transaction");
 				payCCButton.setEnabled(true);
 				pinInput.setEnabled(false);
@@ -348,8 +354,7 @@ public class CustomerGUI{
 	{
 		this.barcodedProduct1 = barcodedProduct1;
 		this.barcodedProduct2 = barcodedProduct2;
-		this.barcodedProduct3 = barcodedProduct3;
-		
+		this.barcodedProduct3 = barcodedProduct3;	
 	}
 
 
@@ -362,6 +367,14 @@ public class CustomerGUI{
 	public void getPayByCCObject(PayByCC payBycc_given) 
 	{
 		this.payBycc = payBycc_given;		
+	}
+
+
+	public void getBarcodes(Barcode barcode1, Barcode barcode2, Barcode barcode3) 
+	{
+		this.barcode1 = barcode1;
+		this.barcode2 = barcode2;
+		this.barcode3 = barcode3;	
 	}
 
 	
