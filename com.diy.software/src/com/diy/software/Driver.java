@@ -54,6 +54,7 @@ public class Driver
 			
 		//barcoded produce having barcode1 as barcode, description = "Barcoded Item#2", Cost = 200, weight = 200.0		
 		barcodedProduct2 = new BarcodedProduct(barcode2,"Barcoded Item#2",costOfItem2, weightOfItem2);
+		//barcodedProduct2.getDescription() ==> returns string of descripion;
 		
 		//barcoded produce having barcode1 as barcode, description = "Barcoded Item#3", Cost = 300, weight = 300.0		
 		barcodedProduct3 = new BarcodedProduct(barcode3,"Barcoded Item#3",costOfItem3, weightOfItem3);
@@ -76,7 +77,7 @@ public class Driver
 		//barcodedItem3 is not added into the shopping cart
 		
 		//create a credit card, with default and correct values
-		creditCard = customer1_creditCard.initialiseCreditCard("Visa", "123456789", "Customer#1", "123", "1234", true, true);
+		creditCard = customer1_creditCard.initialiseCreditCard("Visa", "123456789", "Customer#1's Credit Card", "123", "1234", true, true);
 		
 		//create the credit card company 
 		customer1_creditCard.initialiseCreditCardCompany("Credit Card Company # 1", 500);
@@ -89,9 +90,20 @@ public class Driver
 		//Customer created
 		//Credit card set and running (not blocked)
 		
-		System.out.println("no errors");
+		//System.out.println("no errors");
 		
 		//customer1 --> Customer Object
 		//customer1_creditCard --> PayByCC.java Object
+		
+		//integrate Drive with Customer GUI
+		//pass the customer
+		//pass the BarcodedProduct --> for descriptions
+		CustomerGUI customer_GUI = new CustomerGUI(customer1);
+		customer_GUI.getBarcodedProducts(barcodedProduct1,barcodedProduct2,barcodedProduct3);
+		customer_GUI.getCreditCard(creditCard);
+		customer_GUI.getPayByCCObject(customer1_creditCard);
+		customer_GUI.createGUI();
+		
+		
 	}
 }
