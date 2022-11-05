@@ -13,9 +13,12 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.MutableComboBoxModel;
+import javax.swing.text.BadLocationException;
 
 import com.diy.hardware.BarcodedProduct;
+import com.diy.hardware.DoItYourselfStation;
 import com.diy.hardware.external.ProductDatabases;
 import com.diy.simulation.Customer;
 import com.jimmyselectronics.Item;
@@ -23,7 +26,9 @@ import com.jimmyselectronics.necchi.Barcode;
 import com.jimmyselectronics.necchi.BarcodedItem;
 import com.jimmyselectronics.necchi.Numeral;
 import com.jimmyselectronics.opeechee.Card;
+import com.jimmyselectronics.opeechee.CardReader;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class CustomerGUI{
@@ -55,50 +60,42 @@ public class CustomerGUI{
 	JComboBox<Object> shoppingCartList;
 	JComboBox<Object> creditCardList;
 	BarcodedItem barcodedItem1;
-	Customer customer; //has a shoppoing cart
-	BarcodedProduct barcodedProduct1, barcodedProduct2, barcodedProduct3;//
-	Card credit_Card;
-	PayByCC payBycc;
-	Barcode barcode1, barcode2, barcode3;
+	Customer customer; //has a shopping cart
+	PayByCC payByCC;
 	
-
-	int count;
-	long total_cost = 0;
-	double total_weight = 0.0;
+	ArrayList<BarcodedProduct> productList;
+	DoItYourselfStation diyStation;
 	
+	long totalCost;
+	double totalWeight;
 	
 	/*
 	 * Constructor class
-	 * takes a Customer as input to access ShoppingCart, Wallet, etc- currently unimplemented
-	 * will also need to take in a ProductDatabase to access item details- currently unimplemented
+	 * @author Benjamin Niles
 	 */
-	public CustomerGUI(Customer customer_given)
+	public CustomerGUI(Customer customer_given) throws IOException
 	{
+		customer = customer_given;
 		
-		count = 0;
-		this.customer = customer_given;
 
-	}
-	
-
-	public void createGUI() 
-	{
+		totalCost = 0;
+		totalWeight = 0.0;
 		frameSetup();
 		buildLeftPanel();
 		buildRightPanel();
 	
-		
 		customerFrame.pack();
 		addListeners();
 			
 		customerFrame.setVisible(true);
-		
+	
 	}
 
 
 /*
  * sets up and populates the main JFrame instance customerFrame
  * works by calling helper methods; this also decreases clutter
+ * @author Benjamin Niles
  */
 	public void frameSetup() {
 		
@@ -114,6 +111,7 @@ public class CustomerGUI{
 	
 	/*
 	 * method to add components to the right panel of customerFrame
+	 * @author Benjamin Niles
 	 */
 	public void buildRightPanel() {
 		
@@ -129,8 +127,8 @@ public class CustomerGUI{
 		
 		
 		infoPanel = new JPanel(new GridLayout());
-		totalLabel = new JLabel("total: "+count);
-		weightLabel = new JLabel("weight: "+count);
+		totalLabel = new JLabel("total: "+totalCost);
+		weightLabel = new JLabel("weight: "+totalWeight);
 		
 		infoPanel.add(totalLabel);
 		infoPanel.add(weightLabel);
@@ -146,6 +144,8 @@ public class CustomerGUI{
 	
 	/*
 	 * method to add components to the left panel of customerFrame
+	 * 
+	 * @author Benjamin Niles
 	 */
 	public void buildLeftPanel() {
 		
@@ -156,26 +156,32 @@ public class CustomerGUI{
 		subPayPanel = new JPanel(new GridLayout(1,2));
 		pinPanel = new JPanel(new GridLayout(1, 2));
 		
-		//this is a temporary list, in actual implementation will need to use Barcode items in Customer.ShoppingCart
-		//and compare them to ProductDatabase to get detailed information
-		//Maybe a 2D array? each product has a barcode, description, price, and weight.
-		//String[] shoppingList = {"item 1", "item 2", "item 3", "item 4"};
-		long[] itemCosts = {barcodedProduct1.getPrice(),barcodedProduct2.getPrice(),barcodedProduct3.getPrice()};
-		double[] itemWeights = {barcodedProduct1.getExpectedWeight(),barcodedProduct2.getExpectedWeight(),barcodedProduct3.getExpectedWeight()};
-		String[] shoppingList = {barcodedProduct1.getDescription()+" "+barcodedProduct1.getBarcode(), barcodedProduct2.getDescription()+" "+barcodedProduct2.getBarcode(), barcodedProduct3.getDescription()+" "+barcodedProduct3.getBarcode()};
-		Barcode[] shoppingListBarcodes = {barcode1, barcode2, barcode3};
-		shoppingCartList = new JComboBox<Object>(shoppingListBarcodes);
+		productList = new ArrayList<BarcodedProduct>(customer.shoppingCart.size());
+		String[] shoppingList = new String[customer.shoppingCart.size()];
+		for(int i =0; i<customer.shoppingCart.size();i++) {
+			productList.add(ProductDatabases.BARCODED_PRODUCT_DATABASE.get(((BarcodedItem)customer.shoppingCart.get(i)).getBarcode()));
+			shoppingList[i]= productList.get(i).getDescription();
+			System.out.println("added item to shoppingList: " + shoppingList[i]);
+			
+		}
+		
+		shoppingCartList = new JComboBox<Object>(shoppingList);
 		shoppingCartList.setModel((MutableComboBoxModel<Object>)shoppingCartList.getModel());
-		shoppingCartList.setSelectedIndex(-1);
+		shoppingCartList.setSelectedIndex(0);
+		customer.selectNextItem();
 		itemLabel = new JLabel("Current item: ",JLabel.RIGHT);
 		addItemScanButton = new JButton("Scan Item");
 		
+		String[] cardList = new String[customer.wallet.cards.size()];
+		for(int i =0; i<customer.wallet.cards.size(); i++) {
+			cardList[i]= customer.wallet.cards.get(i).kind;
+			System.out.println("added card to cardList: " + cardList[i]);
+			
+		}
 		
-		//likewise, this is a temporary credit card list
-		//String[] cardList = {"card 1", "card 2", "card 3", "card 4"};
-		String[] cardList = {credit_Card.cardholder};
 		creditCardList = new JComboBox<Object>(cardList);
-		creditCardList.setSelectedIndex(-1);
+		creditCardList.setSelectedIndex(0);
+		customer.selectCard((String)creditCardList.getSelectedItem());
 		creditCardList.setEnabled(false);
 		cardLabel = new JLabel("current card: ", JLabel.RIGHT);
 		payCCButton = new JButton("Pay by Credit Card");
@@ -212,56 +218,92 @@ public class CustomerGUI{
 	/*
 	 * method to add listeners to various components in the GUI
 	 * customer interactivity/simulation is handled here
+	 * 
+	 * @author Benjamin Niles
 	 */
-	public void addListeners() {
+	public void addListeners() throws IOException {
 	
 		payCCButton.addActionListener(e->{
 			
-			//check for preconditions? In GUI or in PayByCC.java?
+			//there is a card already in the slot when reached here
+			if(payByCC.postTransaction(totalCost, totalCost+5))
+			{
+
+				System.out.println("Total cost = "+ totalCost);
+
+				//how to remove card from card reader??
+			//if the transaction is successfull, then remove the card from the card reader
+				///diyStation.cardReader.remove();
+
+				customer.replaceCardInWallet();
+				
+				pinInput.setText("");
+				
+				totalLabel.setText("total: "+totalCost);
+				weightLabel.setText("weight: "+totalWeight);
+				billTextArea.setText("");
+				payCCButton.setEnabled(false);
+				pinInput.setEnabled(false);
+				pinLabel.setEnabled(false);
+				pinLabel.setText("Enter pin: ");
+				creditCardList.setSelectedIndex(-1);
+				creditCardList.setEnabled(false);
+				cardLabel.setEnabled(false);
+				
+				System.out.println("Transaction approved");
+				System.out.println("remaining balance: "+payByCC.getCreditCardLimit());
+				totalCost = 0;
+				totalWeight = 0.0;
+				
+				//disable the pay by cc buttom
+				addItemScanButton.setEnabled(false);
+				billTextArea.append("TRANSACTION COMPLETED");
+				customer.freeUpStation();
+				
+				
+			}
+			else
+			{
+				//have to remove card from card reader somehow
+				customer.replaceCardInWallet();
+				payCCButton.setEnabled(false);
+				pinInput.setEnabled(false);
+				pinLabel.setEnabled(false);
+				pinLabel.setText("Enter pin: ");
+				creditCardList.setEnabled(true);
+				cardLabel.setEnabled(true);
+				
+				System.out.println("Transaction denied");
+			}
 			
-			//pay by Credit Card method call goes here!
-			//is card blocking/bank verification handled by payByCC?
 			
-			pinInput.setText("");
-			count = 0;
-			totalLabel.setText("total: "+total_cost);
-			weightLabel.setText("weight: "+total_weight);
-			billTextArea.setText("");
-			payCCButton.setEnabled(false);
-			pinInput.setEnabled(false);
-			pinLabel.setEnabled(false);
-			pinLabel.setText("Enter pin: ");
-			creditCardList.setEnabled(false);
-			cardLabel.setEnabled(false);
+			
 		});
 		
 		addItemScanButton.addActionListener(e->{
 		
-			/*
-			 * addItemWithScanner method call goes here!
-			 *this is currently set up so that the GUI updates based on its own list stored in shoppingCartList, not from the contents of Customer.ShoppingCart
-			 *
-			 *visual explanation:
-			 * button-> item removed from shoppingCartList
-			 *		\> item removed from Customer.ShoppingCart
-			 *      
-			 * not:
-			 * button->item removed from Customer.shoppingCart->item removed from shoppingCartList
-			 * 
-			 * should it be changed to the second setup? Would need to compare/search Barcodes with ProductDatabase again
-			 */
-			
 			//selected items are removed from the list and added to the text field in the right panel
 			//cost and weight information are also updated
-			billTextArea.append(shoppingCartList.getSelectedItem()+"\n");
 			
-			//get the price of the selected item
-			//selected item is BarcodedItem description, so we have to get the item from the description
 			
-			total_cost = total_cost + barcodedProduct1.getPrice();
-			total_weight = total_weight + barcodedProduct1.getExpectedWeight();
-			totalLabel.setText("total: "+total_cost);
-			weightLabel.setText("weight: "+total_weight);
+			customer.scanItem();
+			
+			String selectedItem = (String) shoppingCartList.getSelectedItem();
+			billTextArea.append(selectedItem+"\n");
+			
+			for(int i = 0; i< productList.size();i++) 
+			{
+				if(productList.get(i).getDescription().equals(selectedItem))
+				{
+					System.out.println("lookup found item "+productList.get(i).getDescription());
+					totalCost+=productList.get(i).getPrice();
+					totalWeight+=productList.get(i).getExpectedWeight();
+				}
+				
+			}
+			totalLabel.setText("total: "+totalCost);
+			weightLabel.setText("weight: "+totalWeight);
+			
 			shoppingCartList.removeItem(shoppingCartList.getSelectedItem());
 			
 			//GUI updates according to number of items left in cart
@@ -269,27 +311,34 @@ public class CustomerGUI{
 			//if no items, can't add any more, so disable comboBox and scan button
 			if(shoppingCartList.getItemCount()>0) {
 				shoppingCartList.setSelectedIndex(0);
-				//itemLabel.setText("current item: "+shoppingCartList.getSelectedItem()+" at index "+shoppingCartList.getSelectedIndex());
 			}else {
 				itemLabel.setText("No items in cart");
 				shoppingCartList.setEnabled(false);
 				addItemScanButton.setEnabled(false);
 			}
 			
-			//if(payCCButton.isEnabled()==false) payCCButton.setEnabled(true);
-			
 			if(creditCardList.isEnabled()==false) {
 				cardLabel.setEnabled(true);
 				creditCardList.setEnabled(true);
+				//payCCButton.setEnabled(true);
+				pinLabel.setEnabled(true);
+				pinInput.setEnabled(true);
 			}
 		});
 		
 		
 		shoppingCartList.addItemListener(e->{
 			//itemLabel.setText("current item: "+shoppingCartList.getSelectedItem()+" at index "+shoppingCartList.getSelectedIndex());
+			customer.deselectCurrentItem();
+			customer.selectNextItem();//customer only selects last item in list, but comboBox allows selection of any item in list- change this?
+		
 		});
+		
 		creditCardList.addItemListener(e->{
 			//cardLabel.setText("current item: "+creditCardList.getSelectedItem()+" at index "+creditCardList.getSelectedIndex());
+			//customer.replaceCardInWallet();
+			//customer.selectCard((String)creditCardList.getSelectedItem());
+			//System.out.println("selected card "+creditCardList.getSelectedItem());
 			if(pinInput.isEnabled()==false) { 
 				pinLabel.setEnabled(true);
 				pinInput.setEnabled(true);
@@ -299,83 +348,39 @@ public class CustomerGUI{
 		pinInput.addActionListener(e->{
 			
 			String fakePIN = "1234";//placeholder
-			System.out.println(pinInput.getPassword()); //character array
-			System.out.println(pinInput.getPassword().length);
-			String passwordString = String.valueOf(pinInput.getPassword());
-			System.out.println("pass"+ passwordString);
-			System.out.println("password entered: "+pinInput.getPassword().toString() );
-						
-			//actual pin of Customer#1's Credit Card ("1234")
-			try 
-			{
-				//credit_Card.insert((String)passwordString); //not working
-				//credit_Card.insert((String)passwordString);
-				System.out.println("input password "+ String.valueOf(pinInput.getPassword()));
-				//credit_Card.insert(String.valueOf(pinInput.getPassword()));
-				System.out.println("correct password, making transaction");
+			String fakePIN2 = String.valueOf(pinInput.getPassword());
+			//System.out.println(fakePIN);
+			//System.out.println(fakePIN2); //character array
+			//System.out.println(fakePIN.equals(fakePIN2));
+					
+			
+			
+			try {
+				customer.insertCard((String)fakePIN);
+				//insert the credit card into station's card reader;
+				
+				System.out.println("pin ok");
+				pinLabel.setText("pin ok");
 				payCCButton.setEnabled(true);
 				pinInput.setEnabled(false);
-				pinLabel.setText("pin ok");
-				if(payBycc.postTransaction(total_cost, total_cost+5))
-				{
-					System.out.println("Transaction approved");
-					System.out.println("Total cost = "+ total_cost);
-				}
-				else
-				{
-					System.out.println("Transaction denied");
-				}
 				
-				
-				//if here --> password correct
 			} catch (IOException e1) {
-				//if here password incorrect
-				System.out.println("incorrect password");
-				//e1.printStackTrace();
+				e1.printStackTrace();
 				pinLabel.setText("incorrect pin");
 				pinInput.setText("");
-			}
-		//	if(Arrays.equals(pinInput.getPassword(),fakePIN.toCharArray())) {
-		//		payCCButton.setEnabled(true);
-		//		pinInput.setEnabled(false);
-		//		pinLabel.setText("pin ok");
-				
-		//	}else {
-		//		pinLabel.setText("incorrect pin");
-		//		pinInput.setText("");
-		//	}
+			}		
 		});
 		
 	}
 
 
-	public void getBarcodedProducts(BarcodedProduct barcodedProduct1, BarcodedProduct barcodedProduct2,
-			BarcodedProduct barcodedProduct3) 
-	{
-		this.barcodedProduct1 = barcodedProduct1;
-		this.barcodedProduct2 = barcodedProduct2;
-		this.barcodedProduct3 = barcodedProduct3;	
-	}
-
-
-	public void getCreditCard(Card creditCard) 
-	{
-		this.credit_Card = creditCard;
-	}
-
-
 	public void getPayByCCObject(PayByCC payBycc_given) 
 	{
-		this.payBycc = payBycc_given;		
+		this.payByCC = payBycc_given;		
 	}
 
 
-	public void getBarcodes(Barcode barcode1, Barcode barcode2, Barcode barcode3) 
-	{
-		this.barcode1 = barcode1;
-		this.barcode2 = barcode2;
-		this.barcode3 = barcode3;	
-	}
+
 
 	
 	
