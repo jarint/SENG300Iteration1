@@ -92,6 +92,7 @@ public class PayByCC {
 	 * @param card: card customer input
 	 * @param price: payment to be made
 	 * @return boolean result if the card can pay or not
+	 * @author: Dayee Lee
 	 */
 	public boolean transaction(Card card, double price){
 
@@ -118,6 +119,7 @@ public class PayByCC {
 	 * @param card: card customer input
 	 * @param price: payment to be made
 	 * @return boolean result if the payment made successfully or not
+	 * @author: Dayee Lee
 	 */
 	public boolean transactionResult(Card card, double price) {
 		if (blockCard(card)){
@@ -138,6 +140,7 @@ public class PayByCC {
 	/**
 	 * Customer I/O: updates the amount due displayed to the customer.
 	 * @param price: payment to be made
+	 * @author: Dayee Lee
 	 */
 	public void displayAmount(double price) {
 		System.out.println("$" + price + "\n");
@@ -148,6 +151,7 @@ public class PayByCC {
 	 * block card if invalid pin input more than 5 times
 	 * ---- Make sure we are checking if the card is blocked or not everytime it is used.
 	 * @param card: card customer input
+	 * @author: Dayee Lee
 	 */
 	public boolean blockCard(Card card) {
 		if (count >= 3) {
