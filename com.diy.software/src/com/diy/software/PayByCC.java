@@ -39,6 +39,7 @@ public class PayByCC {
 	 * 1. Customer I/O : Signals the insertion of a credit card and pin
 	 * @param card: card customer input
 	 * @return boolean if card is inserted or not
+	 * @author: Dayee Lee
 	 */
 	public boolean insertCard(Card card) {
 		System.out.println("Card is inserted");
@@ -51,6 +52,7 @@ public class PayByCC {
 	 * @param card: card customer input
 	 * @param input_pin: pin customer input
 	 * @return boolean result of if pin is valid or not
+	 * @author: Dayee Lee
 	 */
 	public boolean validateCard (Card card, String input_pin) throws InvalidPINException {
 		if (input_pin == pin) {
@@ -66,6 +68,7 @@ public class PayByCC {
 	 * 3. System: Signals to the Bank the details of the credit card and the amount to be charged
 	 * @param card: card customer input
 	 * @param price: amount to be charged
+	 * @author: Dayee Lee
 	 */
 	public void bankCharge(Card card, int price){
 		//??
@@ -77,6 +80,7 @@ public class PayByCC {
 	 * // Probably unnecessary //
 	 * @param price: payment to be made
 	 * @return int hold number
+	 * @author: Dayee Lee
 	 */
 	public double holdNumber(double price) {
 		return price;
