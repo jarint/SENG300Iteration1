@@ -1,6 +1,9 @@
 package com.diy.software;
 
+import java.io.IOException;
+
 import com.diy.hardware.BarcodedProduct;
+import com.diy.hardware.DoItYourselfStation;
 import com.diy.hardware.external.ProductDatabases;
 import com.diy.simulation.Customer;
 import com.diy.simulation.Wallet;
@@ -22,7 +25,7 @@ import com.jimmyselectronics.opeechee.Card;
 public class Driver 
 {
 
-	public static void main(String[] args) 
+	public static void main(String[] args) throws IOException 
 	{
 		Barcode barcode1, barcode2, barcode3;
 		BarcodedProduct barcodedProduct1, barcodedProduct2, barcodedProduct3;
@@ -37,9 +40,10 @@ public class Driver
 		long costOfItem3 = 300;
 		
 		Customer customer1 = new Customer();
-		Wallet customer1_wallet = new Wallet();
+		//Wallet customer1_wallet = new Wallet();
 		Card creditCard;		
 		PayByCC customer1_creditCard = new PayByCC();
+		DoItYourselfStation selfCheckout = new DoItYourselfStation();
 		
 		double customer1_maxCreditLimit = 5000;
 		
@@ -54,6 +58,7 @@ public class Driver
 			
 		//barcoded produce having barcode1 as barcode, description = "Barcoded Item#2", Cost = 200, weight = 200.0		
 		barcodedProduct2 = new BarcodedProduct(barcode2,"Barcoded Item#2",costOfItem2, weightOfItem2);
+		//barcodedProduct2.getDescription() ==> returns string of descripion;
 		
 		//barcoded produce having barcode1 as barcode, description = "Barcoded Item#3", Cost = 300, weight = 300.0		
 		barcodedProduct3 = new BarcodedProduct(barcode3,"Barcoded Item#3",costOfItem3, weightOfItem3);
@@ -73,10 +78,10 @@ public class Driver
 		//add items into customer's shopping cart
 		customer1.shoppingCart.add(barcodedItem1);
 		customer1.shoppingCart.add(barcodedItem2);
-		//barcodedItem3 is not added into the shopping cart
+		customer1.shoppingCart.add(barcodedItem3);
 		
 		//create a credit card, with default and correct values
-		creditCard = customer1_creditCard.initialiseCreditCard("Visa", "123456789", "Customer#1", "123", "1234", true, true);
+		creditCard = customer1_creditCard.initialiseCreditCard("Visa", "123456789", "Customer#1's Credit Card", "123", "1234", true, true);
 		
 		//create the credit card company 
 		customer1_creditCard.initialiseCreditCardCompany("Credit Card Company # 1", 500);
@@ -85,13 +90,39 @@ public class Driver
 		customer1_creditCard.addCardIntoDatabase(customer1_maxCreditLimit);
 		
 		//create the customer wallet;
-		customer1_wallet.cards.add(creditCard);			
+		//customer1_wallet.cards.add(creditCard);			
 		//Customer created
 		//Credit card set and running (not blocked)
 		
-		System.out.println("no errors");
+		//System.out.println("no errors");
 		
 		//customer1 --> Customer Object
 		//customer1_creditCard --> PayByCC.java Object
+		
+		customer1.wallet.cards.add(creditCard);
+		
+		creditCard = customer1_creditCard.initialiseCreditCard("asiV", "987654321", "draC tiderC s'1#remotsuC", "321", "4321", true, true);
+		customer1_creditCard.addCardIntoDatabase(customer1_maxCreditLimit);
+		
+		customer1.wallet.cards.add(creditCard);
+		
+		selfCheckout.plugIn();
+		selfCheckout.turnOn();
+		customer1.useStation(selfCheckout);
+		
+		//integrate Drive with Customer GUI
+		//pass the customer
+		//pass the BarcodedProduct --> for descriptions
+		
+		//CustomerGUI customer_GUI = new CustomerGUI(customer1);
+		//customer_GUI.getPayByCCObject(customer1_creditCard);
+		
+		AttendantGUI attendantGUI = new AttendantGUI(customer1, selfCheckout);
+		attendantGUI.customerGUI.getPayByCCObject(customer1_creditCard);
+		
+	
+		
+	
+		
 	}
 }
